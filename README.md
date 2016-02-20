@@ -1,5 +1,5 @@
 # Unsafe-SARC-Extractor
-This programs allows you to extract SARC files and use SAHT files to find their real names. It must be used with Python 3 (Python 2 gives errors).
+This programs allows you to extract SARC files and use SAHT files to find their real names. It must be used with Python 3 (Python 2 gives errors). This has been tested on both Windows and Linux.
 
 ### Usage
 
