@@ -21,6 +21,8 @@ If you don't put in a SAHT file or if the hash is not in the SAHT file, the file
 
 ##Credits
 Gericom: For EveryFileExplorer (I used the source code to figure out the the SAHT format) and the HashTable.saht
+
 Pabloh&g and Mkgirlism: For the leaked Nintendo sdk (Allows me to understand the format more better)
+
 ObsidianX: For the documentation on the SARC files on 3dbrew
 
