@@ -1,11 +1,11 @@
 from sarc import *
 from saht import *
+from misc import *
 import os
 import argparse
 import glob
 
-parser = argparse.ArgumentParser(description=
-                                 'This program can extract \'unsafe\' SARC files')
+parser = argparse.ArgumentParser(description='This program can extract \'unsafe\' SARC files')
 parser.add_argument("SARC", help="put the location of the SARC file. "
                                  "This is an official Nintendo container format"
                                  " used to store game files in.", type=str)
@@ -26,11 +26,26 @@ for currentInput in glob.glob(args.SARC):
     mainRootPath = os.path.join(DirPath, mainEntryDir+'.d')
     os.mkdir(mainRootPath)
 
-    if args.SAHT:
-        memorySAHTDatabase = {}
-        thirdpartySAHT.extract(args.SAHT, memorySAHTDatabase)
+    for key in memorySARCDatabase.keys():
+        if 'String' in memorySARCDatabase[key]:
+            FileNameValue = memorySARCDatabase[key]['String']['File']
+            if "Dir" in memorySARCDatabase[key]['String']:
+                DirNameValue = memorySARCDatabase[key]['String']["Dir"]
+                try:
+                    os.mkdir(os.path.join(mainRootPath, DirNameValue))
+                except FileExistsError:
+                    pass
+                path = os.path.join(mainRootPath, DirNameValue, FileNameValue)
+                print(path)
+                Writefile(path, memorySARCDatabase[key]["Data"])
+            else:
+                path = os.path.join(mainRootPath, FileNameValue)
+                print(path)
+                Writefile(path, memorySARCDatabase[key]["Data"])
 
-        for key in memorySARCDatabase.keys():
+        elif args.SAHT:
+            memorySAHTDatabase = {}
+            thirdpartySAHT.extract(args.SAHT, memorySAHTDatabase)
             if key in memorySAHTDatabase.keys():
                 FileNameValue = memorySAHTDatabase[key]["File Name"]
                 if "Directory Name" in memorySAHTDatabase[key]:
@@ -39,23 +54,18 @@ for currentInput in glob.glob(args.SARC):
                         os.mkdir(os.path.join(mainRootPath, DirNameValue))
                     except FileExistsError:
                         pass
-                    print(os.path.join(mainRootPath, DirNameValue, FileNameValue))
                     path = os.path.join(mainRootPath, DirNameValue, FileNameValue)
-                    NewFile = open(path, mode='bw', buffering=0)
-                    NewFile.write(memorySARCDatabase[key]["Data"])
-                    NewFile.close()
+                    print(path)
+                    Writefile(path, memorySARCDatabase[key]["Data"])
                 else:
-                    print(os.path.join(mainRootPath, FileNameValue))
                     path = os.path.join(mainRootPath, FileNameValue)
-                    NewFile = open(path, mode='bw', buffering=0)
-                    NewFile.write(memorySARCDatabase[key]["Data"])
-                    NewFile.close()
+                    print(path)
+                    Writefile(path, memorySARCDatabase[key]["Data"])
             else:
-                NewFile = open(os.path.join(mainRootPath, key), mode='bw', buffering=0)
-                NewFile.write(memorySARCDatabase[key]["Data"])
-                NewFile.close()
-    else:
-        for key in memorySARCDatabase:
-            NewFile = open(os.path.join(mainRootPath, key), mode='bw', buffering=0)
-            NewFile.write(memorySARCDatabase[key]["Data"])
-            NewFile.close()
+                Writefile(os.path.join(mainRootPath, key), memorySARCDatabase[key]["Data"])
+
+        else:
+            Writefile(os.path.join(mainRootPath, key), memorySARCDatabase[key]["Data"])
+
+
+
