@@ -4,30 +4,30 @@ import os
 
 
 class nintendoSarc(object):
-    def extract(sarc_file, dictionary_name):
+    def extract(sarc_file, dictionary_name, endian):
         # First Start off by opening the file
         importSARCFile = open(sarc_file, mode='br', buffering=0)
 
         # Now the program is going to analyse the SARC section
-        SARCHeader = unpack('<4s', importSARCFile.read(4))[0]
-        SARCHeaderLength = unpack('<h', importSARCFile.read(2))[0]
+        SARCHeader = unpack(endian + '4s', importSARCFile.read(4))[0]
+        SARCHeaderLength = unpack(endian + 'h', importSARCFile.read(2))[0]
         SARCByteOrderMarker = importSARCFile.read(2)
-        SARCFileLength = unpack('<i', importSARCFile.read(4))[0]
-        SARCAbsoluteDataOffset = unpack('<i', importSARCFile.read(4))[0]
-        SARCUnknown = unpack('<i', importSARCFile.read(4))[0]
+        SARCFileLength = unpack(endian + 'i', importSARCFile.read(4))[0]
+        SARCAbsoluteDataOffset = unpack(endian + 'i', importSARCFile.read(4))[0]
+        SARCUnknown = unpack(endian + 'i', importSARCFile.read(4))[0]
 
         # Then it is going to check the SFAT
         SFATHeaderSeek = importSARCFile.tell()
-        SFATHeader = unpack('<4s', importSARCFile.read(4))[0]
-        SFATHeaderLength = unpack('<h', importSARCFile.read(2))[0]
-        SFATNodeCount = unpack('<h', importSARCFile.read(2))[0]
-        SFATFilenameHashMultiplier = unpack('<i', importSARCFile.read(4))[0]
+        SFATHeader = unpack(endian + '4s', importSARCFile.read(4))[0]
+        SFATHeaderLength = unpack(endian + 'h', importSARCFile.read(2))[0]
+        SFATNodeCount = unpack(endian + 'h', importSARCFile.read(2))[0]
+        SFATFilenameHashMultiplier = unpack(endian + 'i', importSARCFile.read(4))[0]
 
         for i in range(0, SFATNodeCount):
             hasRealFile = False
 
-            SFATNameHash = hex(unpack('<I', importSARCFile.read(4))[0])
-            SFAT_SFNT_FilenameOffset = unpack('<i', importSARCFile.read(4))[0]
+            SFATNameHash = hex(unpack(endian + 'I', importSARCFile.read(4))[0])
+            SFAT_SFNT_FilenameOffset = unpack(endian + 'i', importSARCFile.read(4))[0]
             if SFAT_SFNT_FilenameOffset is not 0:
                 hasRealFile = True
 
@@ -45,8 +45,8 @@ class nintendoSarc(object):
                 filePath = os.path.split(extractedString)
                 importSARCFile.seek(SFATCurrentSeek)
 
-            SFATFileDataStart = unpack('<i', importSARCFile.read(4))[0]
-            SFATFileDataEnd = unpack('<i', importSARCFile.read(4))[0]
+            SFATFileDataStart = unpack(endian + 'i', importSARCFile.read(4))[0]
+            SFATFileDataEnd = unpack(endian + 'i', importSARCFile.read(4))[0]
             SFATSeekOffset = importSARCFile.tell()
 
             dataStartingPoint = SARCAbsoluteDataOffset + SFATFileDataStart

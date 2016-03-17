@@ -5,20 +5,29 @@ import os
 import argparse
 import glob
 
-parser = argparse.ArgumentParser(description='This program can extract \'unsafe\' SARC files')
+parser = argparse.ArgumentParser(description='This program can extract both \'safe\''
+                                             'and \'unsafe\' SARC files. By default, the'
+                                             'endian is set to little endian for the 3DS files')
 parser.add_argument("SARC", help="put the location of the SARC file. "
                                  "This is an official Nintendo container format"
                                  " used to store game files in.", type=str)
 parser.add_argument("--SAHT", help="Put the location of the SAHT file. "
                                    "These files contain the real file names"
                                    " for the hashes", type=str)
+parser.add_argument("-b", "--Big", help="Set the endian to big endian. (Wii U SARC files "
+                               "are big endian while 3DS SARC files are little "
+                               "endian.", action="store_true")
 parser.parse_args()
 args = parser.parse_args()
 
+if args.Big:
+    inputendian = '>'
+else:
+    inputendian = '<'
 
 for currentInput in glob.glob(args.SARC):
     memorySARCDatabase = {}
-    nintendoSarc.extract(currentInput, memorySARCDatabase)
+    nintendoSarc.extract(currentInput, memorySARCDatabase, inputendian)
     print("")
     print(memorySARCDatabase.keys())
     mainEntryDir = os.path.split(currentInput)[1]
