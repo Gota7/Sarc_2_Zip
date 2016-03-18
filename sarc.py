@@ -15,52 +15,78 @@ class nintendoSarc(object):
         SARCFileLength = unpack(endian + 'i', importSARCFile.read(4))[0]
         SARCAbsoluteDataOffset = unpack(endian + 'i', importSARCFile.read(4))[0]
         SARCUnknown = unpack(endian + 'i', importSARCFile.read(4))[0]
+        SARCDict = {"Header": SARCHeader,
+                    "Length": SARCHeaderLength,
+                    "ByteOrder": SARCByteOrderMarker,
+                    "FileSize": SARCFileLength,
+                    "AbsoluteDataOffset": SARCAbsoluteDataOffset,
+                    "Unknown": SARCUnknown}
+#        print(SARCDict)
 
         # Then it is going to check the SFAT
-        SFATHeaderSeek = importSARCFile.tell()
         SFATHeader = unpack(endian + '4s', importSARCFile.read(4))[0]
         SFATHeaderLength = unpack(endian + 'h', importSARCFile.read(2))[0]
         SFATNodeCount = unpack(endian + 'h', importSARCFile.read(2))[0]
         SFATFilenameHashMultiplier = unpack(endian + 'i', importSARCFile.read(4))[0]
-
-        for i in range(0, SFATNodeCount):
-            hasRealFile = False
-
+        SFATHeaderDict = {"Header": SFATHeader,
+                          "Length": SFATHeaderLength,
+                          "NodeCount": SFATNodeCount,
+                          "FilenameHashMultipler": SFATFilenameHashMultiplier}
+        SFATNodeDict = {}
+        for i in range(0, SFATHeaderDict["NodeCount"]):
             SFATNameHash = hex(unpack(endian + 'I', importSARCFile.read(4))[0])
             SFAT_SFNT_FilenameOffset = unpack(endian + 'i', importSARCFile.read(4))[0]
-            if SFAT_SFNT_FilenameOffset is not 0:
-                hasRealFile = True
-
-                SFATCurrentSeek = importSARCFile.tell()
-                bufferSFNTFilenameOffset = pack('i', SFAT_SFNT_FilenameOffset)
-                SFNTDataString = unpack('i', bufferSFNTFilenameOffset[:3] + b'\x00')[0]
-                # If you are wondering where the 16 came, Think
-                # about how each node takes sixteen bytes
-                # Also the 8 came from the SFNT Header size
-                beginningString = SFATHeaderSeek + SFATHeaderLength + \
-                                  (SFATNodeCount * 16) + 8 + (SFNTDataString * 4)
-
-                importSARCFile.seek(beginningString)
-                extractedString = ReadStringUntilNull.__init__(importSARCFile)
-                filePath = os.path.split(extractedString)
-                importSARCFile.seek(SFATCurrentSeek)
-
             SFATFileDataStart = unpack(endian + 'i', importSARCFile.read(4))[0]
             SFATFileDataEnd = unpack(endian + 'i', importSARCFile.read(4))[0]
-            SFATSeekOffset = importSARCFile.tell()
+            SFATNodeDict[SFATNameHash] = {"FilenameOffset": SFAT_SFNT_FilenameOffset,
+                                          "FileDataStart": SFATFileDataStart,
+                                          "FileDataEnd": SFATFileDataEnd}
+#        print(SFATHeaderDict)
+#        print(SFATNodeDict)
 
-            dataStartingPoint = SARCAbsoluteDataOffset + SFATFileDataStart
-            DataSize = SFATFileDataEnd - SFATFileDataStart
-            importSARCFile.seek(dataStartingPoint)
-            extractedData = importSARCFile.read(DataSize)
-            importSARCFile.seek(SFATSeekOffset)
+        # And then finally the SFNT Section
+        SFNTHeader = unpack(endian + '4s', importSARCFile.read(4))[0]
+        SFNTHeaderLength = unpack(endian + 'h', importSARCFile.read(2))[0]
+        # Note to self, check to see if short should be signed or unsigned
+        SFNTUnknown = unpack(endian + 'h', importSARCFile.read(2))[0]
+        SFNTDataStart = importSARCFile.tell()
+        SFNTDict = {"Header": SFNTHeader,
+                    "Length": SFNTHeaderLength,
+                    "Unknown": SFNTUnknown,
+                    "StringLocation": SFNTDataStart}
+#        print(SFNTDict)
 
-            if hasRealFile:
-                if filePath[0] is not '':
-                    dictionary_name[SFATNameHash] = {'Data': extractedData, 'Size': DataSize,
-                                                     'String': {'Dir': filePath[0], 'File': filePath[1]}}
-                else:
-                    dictionary_name[SFATNameHash] = {'Data': extractedData, 'Size': DataSize,
-                                                     'String': {'File': filePath[1]}}
+        for FileHash in SFATNodeDict.keys():
+            # First lets extract the actual files from
+            # the SARC and also gets it's size.
+            importSARCFile.seek(SARCDict["AbsoluteDataOffset"] +
+                                SFATNodeDict[FileHash]["FileDataStart"])
+            DataSize = SFATNodeDict[FileHash]["FileDataEnd"] - \
+                       SFATNodeDict[FileHash]["FileDataStart"]
+            ExtractedData = importSARCFile.read(DataSize)
+
+            hasRealString = 0
+            if SFATNodeDict[FileHash]["FilenameOffset"] is not 0:
+                # To explain, there is a 01 that is irrelevant to finding the real string
+                # Within the SARC file. I am just getting rid of that 01. (The 01 is there
+                # to say, hey I have the real string inside me, the SARC file!)
+                # Also the strings in the SFNT Data are aligned by 4. That is where the
+                # times 4 comes from.
+                hasRealString = 1
+                bufferSFNTFilenameOffset = pack('<i', SFATNodeDict[FileHash]["FilenameOffset"])
+                SFNTDataString = unpack('<i', bufferSFNTFilenameOffset[:3] + b'\x00')[0]
+                importSARCFile.seek(SFNTDict["StringLocation"] + (SFNTDataString * 4))
+                RealString = ReadStringUntilNull.__init__(importSARCFile)
+                filePath = os.path.split(RealString)
             else:
-                dictionary_name[SFATNameHash] = {'Data': extractedData, 'Size': DataSize}
+                pass
+
+            if hasRealString:
+                if filePath[0] is not '':
+                    dictionary_name[FileHash] = {'Data': ExtractedData, 'Size': DataSize,
+                                                 'String': {'Dir': filePath[0], 'File': filePath[1]}}
+                else:
+                    dictionary_name[FileHash] = {'Data': ExtractedData, 'Size': DataSize,
+                                                 'String': {'File': filePath[1]}}
+            else:
+                dictionary_name[FileHash] = {'Data': ExtractedData, 'Size': DataSize}
