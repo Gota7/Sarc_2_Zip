@@ -1,5 +1,5 @@
 from struct import *
-
+import os
 
 # My idea behind this code is to keep unpacking the
 # Buffer until the Buffer hit a Null (or None in python)
@@ -25,3 +25,10 @@ class Writefile:
         NewFile = open(newName, mode='bw', buffering=0)
         NewFile.write(newData)
         NewFile.close()
+
+class CreateDirOnlyIfNoneExist(object):
+    def __init__(self, pathInput):
+        try:
+            os.mkdir(os.path.join(pathInput))
+        except FileExistsError:
+            pass

@@ -47,7 +47,6 @@ class nintendoSarc(object):
         # And then finally the SFNT Section
         SFNTHeader = unpack(endian + '4s', importSARCFile.read(4))[0]
         SFNTHeaderLength = unpack(endian + 'h', importSARCFile.read(2))[0]
-        # Note to self, check to see if short should be signed or unsigned
         SFNTUnknown = unpack(endian + 'h', importSARCFile.read(2))[0]
         SFNTDataStart = importSARCFile.tell()
         SFNTDict = {"Header": SFNTHeader,

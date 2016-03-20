@@ -28,29 +28,24 @@ else:
 for currentInput in glob.glob(args.SARC):
     memorySARCDatabase = {}
     nintendoSarc.extract(currentInput, memorySARCDatabase, inputendian)
-    print("")
-    print(memorySARCDatabase.keys())
-    mainEntryDir = os.path.split(currentInput)[1]
-    DirPath = os.path.split(currentInput)[0]
-    mainRootPath = os.path.join(DirPath, mainEntryDir+'.d')
+    mainRootPath = currentInput + '.d'
     os.mkdir(mainRootPath)
 
+    print("")
+    print(memorySARCDatabase.keys())
     for key in memorySARCDatabase.keys():
+        FileData = memorySARCDatabase[key]["Data"]
         if 'String' in memorySARCDatabase[key]:
             FileNameValue = memorySARCDatabase[key]['String']['File']
             if "Dir" in memorySARCDatabase[key]['String']:
                 DirNameValue = memorySARCDatabase[key]['String']["Dir"]
-                try:
-                    os.mkdir(os.path.join(mainRootPath, DirNameValue))
-                except FileExistsError:
-                    pass
+                CreateDirOnlyIfNoneExist(os.path.join(mainRootPath, DirNameValue))
                 path = os.path.join(mainRootPath, DirNameValue, FileNameValue)
-                print(path)
-                Writefile(path, memorySARCDatabase[key]["Data"])
+                Writefile(path, FileData)
             else:
                 path = os.path.join(mainRootPath, FileNameValue)
-                print(path)
-                Writefile(path, memorySARCDatabase[key]["Data"])
+                Writefile(path, FileData)
+            print(path)
 
         elif args.SAHT:
             memorySAHTDatabase = {}
@@ -59,22 +54,22 @@ for currentInput in glob.glob(args.SARC):
                 FileNameValue = memorySAHTDatabase[key]["File Name"]
                 if "Directory Name" in memorySAHTDatabase[key]:
                     DirNameValue = memorySAHTDatabase[key]["Directory Name"]
-                    try:
-                        os.mkdir(os.path.join(mainRootPath, DirNameValue))
-                    except FileExistsError:
-                        pass
+                    CreateDirOnlyIfNoneExist(os.path.join(mainRootPath, DirNameValue))
                     path = os.path.join(mainRootPath, DirNameValue, FileNameValue)
-                    print(path)
-                    Writefile(path, memorySARCDatabase[key]["Data"])
+                    Writefile(path, FileData)
                 else:
                     path = os.path.join(mainRootPath, FileNameValue)
-                    print(path)
-                    Writefile(path, memorySARCDatabase[key]["Data"])
+                    Writefile(path, FileData)
+                print(path)
             else:
-                Writefile(os.path.join(mainRootPath, key), memorySARCDatabase[key]["Data"])
+                path = os.path.join(mainRootPath, key)
+                Writefile(path, FileData)
+                print(path)
 
         else:
-            Writefile(os.path.join(mainRootPath, key), memorySARCDatabase[key]["Data"])
+            path = os.path.join(mainRootPath, key)
+            Writefile(path, FileData)
+            print(path)
 
 
 
